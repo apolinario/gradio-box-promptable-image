@@ -112,12 +112,18 @@ class BoxPromptableImage(gradio.Image):
         im = super().preprocess(payload.image)
         return {"image": im, "points": payload.points}
 
-    def postprocess(self, value: PromptValue) -> PromptData | None:
+    def postprocess(self, value: PromptValue | None) -> PromptData:
         if value is None:
-            return None
-
-        image, points = value.get("image", None), value.get("points", [])
-        return PromptData(image=super().postprocess(image), points=points)
+            return PromptData(image=None, points=None)
+            
+        image, points = value.get("image"), value.get("points", [])
+        processed_image = super().postprocess(image)
+        
+        if processed_image is not None and not isinstance(processed_image, FileData):
+            if isinstance(processed_image, dict):
+                processed_image = FileData(**processed_image)
+                
+        return PromptData(image=processed_image, points=points)
 
     def check_streamable(self):
         return super().check_streamable()
